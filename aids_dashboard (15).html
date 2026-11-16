@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDS Posters Collection — Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --nav-w: 220px;
+    --bg: #ffffff;
+    --bg2: #f4f6fa;
+    --bg3: #e8ecf4;
+    --bg4: #dde2ee;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --text: #111827;
+    --text2: #374151;
+    --text3: #545b6b;
+    --accent: #4f8ef7;
+    --accent2: #3b6fd4;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --coral: #f87171;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --pink: #f472b6;
+    --radius: 10px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --focus-ring: 0 0 0 3px #4f8ef7, 0 0 0 5px rgba(79,142,247,0.3);
+  }
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+  /* Light mode */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f7fa; --bg2: #ffffff; --bg3: #eef1f6; --bg4: #e0e4ed;
+      --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.16);
+      --text: #111827; --text2: #374151; --text3: #545b6b;
+      --accent: #1d4ed8; --accent2: #1e40af;
+      --green: #059669; --amber: #d97706; --coral: #dc2626;
+      --purple: #7c3aed;
+    }
+  }
+  /* Skip link */
+  .skip-link {
+    position: absolute; left: -9999px; top: 8px; z-index: 9999;
+    background: var(--accent); color: #fff; padding: 8px 16px;
+    border-radius: 4px; font-size: 14px; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+  }
+  .skip-link:focus { left: 8px; outline: 3px solid #fff; outline-offset: 2px; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; }
+  /* Universal focus ring */
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
+  /* Minimum touch target - apply to nav and primary actions only */
+  .nav-item, .topbar-pill { min-height: 44px; }
+  /* ctrl-btns are grouped controls - use 36px min for compact layout */
+  .ctrl-btn { min-height: 36px; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: var(--nav-w); min-height: 100vh; background: var(--bg2);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 20px 18px 16px; border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .logo-tag {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .sidebar-logo h1 { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .sidebar-stats { padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .stat-chip { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+  .stat-chip .sc-label { font-size: 12px; color: var(--text2); }
+  .stat-chip .sc-val { font-size: 12px; font-weight: 600; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .sidebar-nav { flex: 1; padding: 10px 10px; overflow-y: auto; }
+  .nav-section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); padding: 10px 8px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px;
+    cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 400;
+    transition: background 0.15s, color 0.15s; margin-bottom: 1px;
+    width: 100%; background: transparent; border: none; text-align: left;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(79,142,247,0.15); color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); padding-left: 7px; }
+  .nav-item .nav-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; font-size: 12px; background: var(--bg4); color: var(--text2); padding: 2px 7px; border-radius: 10px; font-family: monospace; }
+  .sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+  /* MAIN */
+  #main { margin-left: var(--nav-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+  #topbar {
+    padding: 14px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-breadcrumb { font-size: 13px; color: var(--text2); }
+  .topbar-breadcrumb span { color: var(--text); font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .topbar-pill { font-size: 12px; padding: 6px 12px; border-radius: 20px; border: 2px solid var(--border2); color: var(--text); background: var(--bg3); cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; white-space: nowrap; font-weight: 500; }
+  .topbar-pill:hover { background: var(--bg4); border-color: var(--text2); }
+  .topbar-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+  #content { padding: 40px 28px 28px 48px; flex: 1; }
+
+  /* TABS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom: 24px; padding-left: 24px; border-left: 4px solid var(--accent); }
+  .page-header h2 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  .page-header p { font-size: 14px; color: var(--text2); }
+
+  /* METRIC CARDS */
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .metric-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .mc-label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; }
+  .mc-value { font-size: 26px; font-weight: 600; color: var(--text); font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+  .mc-sub { font-size: 12px; color: var(--text2); }
+  .mc-accent { border-top: 2px solid var(--accent); }
+  .mc-green { border-top: 2px solid var(--green); }
+  .mc-amber { border-top: 2px solid var(--amber); }
+  .mc-purple { border-top: 2px solid var(--purple); }
+
+  /* CHART CARDS */
+  .chart-row { display: grid; gap: 16px; margin-bottom: 20px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 2fr 1fr; }
+  .chart-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;
+  }
+  .chart-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .chart-card-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .chart-card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .chart-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ctrl-btn { font-size: 12px; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border2); color: var(--text2); background: transparent; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .ctrl-btn:hover { background: var(--bg3); color: var(--text); }
+  .ctrl-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  /* SEARCH BAR */
+  .search-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .search-input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px;
+    padding: 7px 12px; color: var(--text); font-size: 12px; font-family: var(--font);
+    outline: none; transition: border-color 0.15s;
+  }
+  .search-input::placeholder { color: var(--text2); opacity: 0.75; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-clear { font-size: 12px; color: var(--text2); cursor: pointer; padding: 6px 10px; border-radius: 5px; border: 1px solid var(--border2); background: transparent; }
+  .search-clear:hover { color: var(--text2); }
+  .filter-count { font-size: 12px; color: var(--text2); white-space: nowrap; }
+
+  /* HORIZONTAL BAR CHARTS */
+  .hbar-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .hbar-label { font-size: 12px; color: var(--text2); width: 130px; flex-shrink: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar-label.wide { width: 180px; }
+  .hbar-track { flex: 1; background: var(--bg4); border-radius: 2px; height: 8px; position: relative; }
+  .hbar-fill { height: 8px; border-radius: 2px; transition: width 0.4s cubic-bezier(.25,.8,.25,1); min-width: 2px; }
+  .hbar-val { font-size: 12px; color: var(--text2); width: 34px; text-align: right; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+  .hbar-pct { font-size: 12px; color: var(--text2); width: 34px; text-align: left; font-family: 'JetBrains Mono', monospace; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text); border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none; white-space: nowrap; background: var(--bg2);
+    position: sticky; top: 0; tabindex: 0;
+  }
+  thead th:hover { color: var(--accent); background: var(--bg3); }
+  thead th:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+  thead th.sort-asc::after { content: ' ↑'; color: var(--accent); font-weight: 700; }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); font-weight: 700; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody tr:focus-within { background: var(--bg3); outline: 2px solid var(--accent); outline-offset: -2px; }
+  tbody td { padding: 9px 14px; color: var(--text2); vertical-align: middle; }
+  tbody td.rank { color: var(--text2); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  tbody td.country-name { color: var(--text); font-weight: 500; }
+  .mini-bar { display: inline-block; height: 6px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .lang-pill { display: inline-block; font-size: 12px; padding: 2px 7px; border-radius: 10px; background: #dbeafe; color: #1e40af; font-weight: 500; border: 1px solid #93c5fd; }
+
+  /* BUBBLE CHART */
+  #bubbleCanvas { width: 100%; cursor: pointer; }
+  .bubble-tooltip {
+    position: absolute; background: #1e293b; border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 7px; padding: 8px 12px; font-size: 12px; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 200; min-width: 120px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .bt-name { font-weight: 600; color: var(--text); margin-bottom: 3px; font-size: 14px; }
+  .bt-val { color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+
+  /* TIMELINE */
+  .timeline-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .tl-leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); cursor: pointer; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* DONUT */
+  .donut-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+  .donut-center { position: absolute; text-align: center; pointer-events: none; }
+  .donut-center-val { font-size: 20px; font-weight: 600; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .donut-center-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .donut-legend { margin-top: 16px; }
+  .dl-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .dl-item:last-child { border-bottom: none; }
+  .dl-left { display: flex; align-items: center; gap: 8px; }
+  .dl-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .dl-name { font-size: 12px; color: var(--text2); }
+  .dl-right { display: flex; gap: 14px; }
+  .dl-val { font-size: 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .dl-pct { font-size: 12px; color: var(--text2); width: 36px; text-align: right; }
+
+  /* SUBJECTS GRID */
+  .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .topic-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; cursor: default; transition: border-color 0.15s;
+  }
+  .topic-card:hover { border-color: var(--border2); }
+  .tc-count { font-size: 20px; font-weight: 600; color: var(--text); font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+  .tc-label { font-size: 12px; color: var(--text2); line-height: 1.3; }
+  .tc-bar { height: 2px; background: var(--bg4); border-radius: 1px; margin-top: 10px; }
+  .tc-bar-fill { height: 2px; border-radius: 1px; }
+
+  /* SUBDIVISIONS ACCORDION */
+  .subdiv-heading {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: 7px; cursor: pointer; transition: background 0.12s;
+    border: 1px solid transparent; margin-bottom: 4px; user-select: none;
+  }
+  .subdiv-heading:hover { background: var(--bg3); border-color: var(--border); }
+  .subdiv-heading.open { background: var(--bg3); border-color: var(--border2); }
+  .subdiv-arrow { font-size: 12px; color: var(--text2); transition: transform 0.2s; flex-shrink:0; }
+  .subdiv-heading.open .subdiv-arrow { transform: rotate(90deg); }
+  .subdiv-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+  .subdiv-count-badge { font-size: 12px; color: var(--text2); background: var(--bg4); padding: 2px 8px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; flex-shrink:0; }
+  .subdiv-total-bar { width: 80px; height: 5px; background: var(--bg4); border-radius: 2px; flex-shrink:0; }
+  .subdiv-total-bar-fill { height: 5px; border-radius: 2px; }
+  .subdiv-rows { display: none; padding: 4px 0 8px 32px; }
+  .subdiv-rows.open { display: block; }
+  .subdiv-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .subdiv-row-name { font-size: 12px; color: var(--text2); flex: 1; }
+  .subdiv-row-name code { font-size: 12px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+  .subdiv-row-track { width: 120px; height: 5px; background: var(--bg4); border-radius: 2px; flex-shrink:0; }
+  .subdiv-row-fill { height: 5px; border-radius: 2px; }
+  .subdiv-row-val { font-size: 12px; color: var(--text2); font-family: 'JetBrains Mono', monospace; width: 28px; text-align:right; flex-shrink:0; }
+
+
+
+  /* Screen reader only utility */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0;
+    margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<nav id="sidebar" aria-label="Dashboard sections">
+  <div class="sidebar-logo">
+    <div class="logo-tag">UCLA Library</div>
+    <h1>AIDS Posters<br>Collection Analytics</h1>
+  </div>
+  <div class="sidebar-stats">
+    <div class="stat-chip"><span class="sc-label">Total posters</span><span class="sc-val">1,422</span></div>
+    <div class="stat-chip"><span class="sc-label">Countries</span><span class="sc-val">30+</span></div>
+    <div class="stat-chip"><span class="sc-label">Languages</span><span class="sc-val">24</span></div>
+    <div class="stat-chip"><span class="sc-label">Date range</span><span class="sc-val">1984–2010</span></div>
+  </div>
+  <div class="sidebar-nav" role="navigation" aria-labelledby="nav-views-label">
+    <div class="nav-section-title" id="nav-views-label">Views</div>
+    <button class="nav-item active" aria-current="page" onclick="switchTab('overview',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      Overview
+    </button>
+    <button class="nav-item" onclick="switchTab('geography',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c-2 2-3 4-3 6.5s1 4.5 3 6.5M8 1.5c2 2 3 4 3 6.5s-1 4.5-3 6.5"/></svg>
+      Geography
+      <span class="nav-badge">30</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('timeline',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,12 5,7 8,9 11,4 15,6"/></svg>
+      Timeline
+    </button>
+    <button class="nav-item" onclick="switchTab('subjects',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+      Subjects & Topics
+      <span class="nav-badge">20</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('language',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+      Languages
+      <span class="nav-badge">12</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('publishers',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 9.5h4"/></svg>
+      Publishers
+      <span class="nav-badge">15</span>
+    </button>
+  </div>
+  <footer class="sidebar-footer">
+    Source: UCLA Biomedical Library<br>
+    History & Special Collections<br>
+    Collection no. 306
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main id="main" aria-label="Dashboard content">
+  <div id="topbar" role="banner">
+    <div class="topbar-breadcrumb">AIDS Posters Collection &rsaquo; <span id="breadcrumb-current">Overview</span></div>
+    <div class="topbar-right" role="group" aria-label="Filter by decade">
+      <button aria-pressed="true" class="topbar-pill active" onclick="setFilter('all',this)">All years</button>
+      <button aria-pressed="false" class="topbar-pill" onclick="setFilter('80s',this)">1980s</button>
+      <button aria-pressed="false" class="topbar-pill" onclick="setFilter('90s',this)">1990s</button>
+      <button aria-pressed="false" class="topbar-pill" onclick="setFilter('00s',this)">2000s</button>
+    </div>
+  </div>
+  <div id="main-content" tabindex="-1">
+    <div aria-live="polite" aria-atomic="true" class="sr-only" id="live-region"></div>
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-panel active" role="region" aria-label="Overview">
+      <div class="page-header">
+        <h2>Collection Overview</h2>
+        <p>1,422 AIDS awareness posters spanning 30+ countries, 1984–2010</p>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card mc-accent">
+          <div class="mc-label">Total Posters</div>
+          <div class="mc-value">1,422</div>
+          <div class="mc-sub" aria-hidden="false">all catalogued items</div>
+        </div>
+        <div class="metric-card mc-green">
+          <div class="mc-label">Largest Collection</div>
+          <div class="mc-value">France</div>
+          <div class="mc-sub">291 posters · 20.5%</div>
+        </div>
+        <div class="metric-card mc-amber">
+          <div class="mc-label">Peak Year</div>
+          <div class="mc-value">1987</div>
+          <div class="mc-sub">249 posters published</div>
+        </div>
+        <div class="metric-card mc-purple">
+          <div class="mc-label">Top Subject</div>
+          <div class="mc-value">Condoms</div>
+          <div class="mc-sub">296 posters · 20.8%</div>
+        </div>
+      </div>
+      <div class="chart-row cols-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title" id="ov-geo-title">Top countries by volume</div><div class="chart-card-sub">Posters per country of origin</div></div>
+          </div>
+          <div id="ov-geo-bars"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Language distribution</div><div class="chart-card-sub">Primary language per poster</div></div>
+          </div>
+          <div style="position:relative; height:220px; display:flex; align-items:center; justify-content:center;">
+            <div class="donut-wrap" style="width:180px; height:180px; flex-shrink:0;">
+              <canvas id="langDonut" width="180" height="180" role="img" aria-label="Donut chart showing language distribution of AIDS poster collection"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="donut-center-val">12</div><div class="donut-center-label">languages</div></div>
+            </div>
+            <div class="donut-legend" style="flex:1; margin-left:20px; margin-top:0;" id="donut-legend"></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Publication timeline</div><div class="chart-card-sub">Posters by year · hover or use keyboard for details</div></div>
+          <div class="chart-controls" role="group" aria-label="Timeline view options">
+            <button aria-pressed="true" class="ctrl-btn active" onclick="setTimelineMode('all',this)">All countries</button>
+            <button aria-pressed="false" class="ctrl-btn" onclick="setTimelineMode('top5',this)">Top 5 countries</button>
+          </div>
+        </div>
+        <div style="position:relative; height:200px;"><canvas id="timelineMain" role="img" aria-label="Timeline chart of AIDS poster publications 1984 to 2010"></canvas></div>
+      </div>
+    </div>
+
+    <!-- GEOGRAPHY TAB -->
+    <div id="tab-geography" class="tab-panel" role="region" aria-label="Geography">
+      <div class="page-header">
+        <h2>Geographic Distribution</h2>
+        <p>Country of origin for all 1,422 posters</p>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card mc-accent"><div class="mc-label">Top Country</div><div class="mc-value">France</div><div class="mc-sub">291 posters</div></div>
+        <div class="metric-card mc-green"><div class="mc-label">Europe Total</div><div class="mc-value">1,130</div><div class="mc-sub">79.5% of collection</div></div>
+        <div class="metric-card mc-amber"><div class="mc-label">Countries</div><div class="mc-value">30+</div><div class="mc-sub">unique origins</div></div>
+        <div class="metric-card mc-purple"><div class="mc-label">German-speaking</div><div class="mc-value">458</div><div class="mc-sub">DE + AT + CH</div></div>
+      </div>
+      <div class="chart-row cols-2">
+        <div class="chart-card" style="grid-column: span 2;">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Country bubble map</div><div class="chart-card-sub">Bubble size = number of posters · hover, touch, or use arrow keys</div></div>
+            <div class="chart-controls" id="bubble-controls">
+              <button aria-pressed="true" class="ctrl-btn active" onclick="setBubbleN(15,this)">Top 15</button>
+              <button aria-pressed="false" class="ctrl-btn" onclick="setBubbleN(20,this)">Top 20</button>
+              <button aria-pressed="false" class="ctrl-btn" onclick="setBubbleN(999,this)">All</button>
+            </div>
+          </div>
+          <div style="position:relative;">
+            <canvas id="bubbleCanvas" height="340" role="img" aria-label="Bubble chart showing countries by poster count"></canvas>
+            <div class="bubble-tooltip" id="bubbleTip">
+              <div class="bt-name" id="bt-name"></div>
+              <div class="bt-val" id="bt-val"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">All countries — sortable table</div><div class="chart-card-sub">Click column headers to sort</div></div>
+          <div class="search-row" style="margin-bottom:0; flex:1; max-width:280px; margin-left:auto;">
+            <label for="geo-search" class="sr-only">Search countries</label><input class="search-input" id="geo-search" type="search" placeholder="Search countries…" oninput="filterGeoTable(this.value)" aria-label="Search countries" autocomplete="off">
+            <button class="search-clear" onclick="document.getElementById('geo-search').value=''; filterGeoTable('')" aria-label="Clear search" aria-controls="geo-table">✕</button>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+        <div class="table-wrap" style="max-height: 420px; overflow-y: auto;">
+          <table id="geo-table" aria-label="Countries sorted by poster count"><caption class="sr-only">Geographic distribution of AIDS poster collection by country of origin</caption>
+            <thead>
+              <tr>
+                <th scope="col" tabindex="0" role="columnheader" aria-sort="ascending" onclick="sortTable('rank')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('rank');}" class="sort-asc">#</th>
+                <th scope="col" tabindex="0" role="columnheader" aria-sort="none" onclick="sortTable('country')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('country');}">Country</th>
+                <th scope="col" tabindex="0" role="columnheader" aria-sort="none" onclick="sortTable('total')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('total');}">Total</th>
+                <th scope="col" tabindex="0" role="columnheader" aria-sort="none" onclick="sortTable('share')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('share');}">Share</th>
+                <th scope="col" tabindex="0" role="columnheader" aria-sort="none" onclick="sortTable('top_lang')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('top_lang');}">Top Language</th>
+                <th scope="col" tabindex="0" role="columnheader" aria-sort="none" onclick="sortTable('languages')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('languages');}">Languages</th>
+              </tr>
+            </thead>
+            <tbody id="geo-tbody"></tbody>
+          </table>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMELINE TAB -->
+    <div id="tab-timeline" class="tab-panel" role="region" aria-label="Timeline">
+      <div class="page-header">
+        <h2>Publication Timeline</h2>
+        <p>Annual distribution of posters across the collection's date range</p>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card mc-accent"><div class="mc-label">Peak Year</div><div class="mc-value">1987</div><div class="mc-sub">249 posters</div></div>
+        <div class="metric-card mc-green"><div class="mc-label">2nd Peak</div><div class="mc-value">2004</div><div class="mc-sub">120 posters</div></div>
+        <div class="metric-card mc-amber"><div class="mc-label">Early Crisis</div><div class="mc-value">1986–87</div><div class="mc-sub">398 posters (28%)</div></div>
+        <div class="metric-card mc-purple"><div class="mc-label">Active Span</div><div class="mc-value">26 yrs</div><div class="mc-sub">1984–2010</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Annual publications — all countries</div></div>
+          <div class="chart-controls">
+            <button aria-pressed="true" class="ctrl-btn active" onclick="setTLView('bar',this)">Bar</button>
+            <button aria-pressed="false" class="ctrl-btn" onclick="setTLView('line',this)">Line</button>
+          </div>
+        </div>
+        <div style="position:relative; height:240px;"><canvas id="timelineDetail" role="img" aria-label="Detailed timeline bar chart of AIDS poster publications per year"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-top:16px;">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Top 5 countries over time</div><div class="chart-card-sub">Multi-line comparison</div></div>
+        </div>
+        <div class="timeline-legend" id="tl-legend"></div>
+        <div style="position:relative; height:220px;"><canvas id="timelineCountry" role="img" aria-label="Multi-line timeline showing top 5 countries publication trends"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SUBJECTS TAB -->
+    <div id="tab-subjects" class="tab-panel" role="region" aria-label="Subjects and Topics">
+      <div class="page-header">
+        <h2>Subjects & Topics</h2>
+        <p>Descriptive and conceptual subject headings across the collection</p>
+      </div>
+      <div class="chart-row cols-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Top visual subjects</div><div class="chart-card-sub">Descriptive topic headings</div></div>
+            <div class="chart-controls">
+              <button aria-pressed="true" class="ctrl-btn active" onclick="setSubjectN(12,this,'subj')">Top 12</button>
+              <button aria-pressed="false" class="ctrl-btn" onclick="setSubjectN(20,this,'subj')">Top 20</button>
+            </div>
+          </div>
+          <div id="subject-bars"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Concept topics</div><div class="chart-card-sub">Thematic/conceptual headings</div></div>
+          </div>
+          <div id="concept-bars"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-card-title">Visual subject cards</div><div class="chart-card-sub" id="subj-cards-sub">Top 20 descriptive topics</div></div>
+        <div style="margin-top:14px;" id="topic-card-grid"></div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px;">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">All subject phrases — combined overview</div>
+            <div class="chart-card-sub">Full phrases from both <em>descriptiveTopic</em> and <em>conceptTopic</em> · <code style="font-size:10px;color:var(--accent);background:var(--bg4);padding:1px 5px;border-radius:3px;">--</code> separates heading from subdivision</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div class="chart-controls" id="phrase-filter-controls" role="group" aria-label="Filter subject phrases">
+              <button aria-pressed="true" class="ctrl-btn active" onclick="setPhraseFilter('all',this)">All</button>
+              <button aria-pressed="false" class="ctrl-btn" onclick="setPhraseFilter('compound',this)">With subdivisions</button>
+              <button aria-pressed="false" class="ctrl-btn" onclick="setPhraseFilter('simple',this)">Simple</button>
+            </div>
+            <label for="phrase-search" class="sr-only">Search subject phrases</label><input class="search-input" id="phrase-search" type="search" placeholder="Search subject phrases…" oninput="renderPhrases()" style="width:180px;" aria-label="Search subject phrases" autocomplete="off">
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 12px;" id="phrase-count-label"></div>
+        <div id="phrase-container" style="max-height:520px;overflow-y:auto;"></div>
+      </div>
+
+    </div>
+
+    <!-- LANGUAGE TAB -->
+    <div id="tab-language" class="tab-panel" role="region" aria-label="Languages">
+      <div class="page-header">
+        <h2>Language Distribution</h2>
+        <p>Language breakdown across all 1,422 posters</p>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card mc-accent"><div class="mc-label">Top Language</div><div class="mc-value">French</div><div class="mc-sub">414 instances · 29%</div></div>
+        <div class="metric-card mc-green"><div class="mc-label">2nd Language</div><div class="mc-value">English</div><div class="mc-sub">378 instances · 27%</div></div>
+        <div class="metric-card mc-amber"><div class="mc-label">3rd Language</div><div class="mc-value">German</div><div class="mc-sub">376 instances · 26%</div></div>
+        <div class="metric-card mc-purple"><div class="mc-label">Total Languages</div><div class="mc-value">24</div><div class="mc-sub">unique languages</div></div>
+      </div>
+      <div class="chart-row cols-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">All languages by volume</div></div>
+          </div>
+          <div id="lang-full-bars"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Language shift by era</div><div class="chart-card-sub">Click an era to compare</div></div>
+          </div>
+          <div class="chart-controls" style="margin-bottom:14px;" id="era-controls">
+            <button aria-pressed="true" class="ctrl-btn active" onclick="setEra('all',this)">All years</button>
+            <button aria-pressed="false" class="ctrl-btn" onclick="setEra('80s',this)">1980s</button>
+            <button aria-pressed="false" class="ctrl-btn" onclick="setEra('90s',this)">1990s</button>
+            <button aria-pressed="false" class="ctrl-btn" onclick="setEra('00s',this)">2000s</button>
+          </div>
+          <div style="position:relative; height:220px;"><canvas id="langEraChart" role="img" aria-label="Bar chart of language distribution by era"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PUBLISHERS TAB -->
+    <div id="tab-publishers" class="tab-panel" role="region" aria-label="Publishers">
+      <div class="page-header">
+        <h2>Publishing Organizations</h2>
+        <p>Organizations responsible for producing the posters in the collection</p>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card mc-accent"><div class="mc-label">Top Publisher</div><div class="mc-value" style="font-size:16px;">Deutsche AIDS-Hilfe</div><div class="mc-sub">114 posters · Germany</div></div>
+        <div class="metric-card mc-green"><div class="mc-label">Top French Org</div><div class="mc-value" style="font-size:16px;">Aides</div><div class="mc-sub">47 posters · France</div></div>
+        <div class="metric-card mc-amber"><div class="mc-label">German Gov.</div><div class="mc-value" style="font-size:16px;">BZgA</div><div class="mc-sub">80 posters · Germany</div></div>
+        <div class="metric-card mc-purple"><div class="mc-label">UN Body</div><div class="mc-value" style="font-size:16px;">UNAIDS</div><div class="mc-sub">17 posters · Global</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Top publishers by poster count</div></div>
+          <div class="chart-controls">
+            <button aria-pressed="true" class="ctrl-btn active" onclick="setPubN(10,this)">Top 10</button>
+            <button aria-pressed="false" class="ctrl-btn" onclick="setPubN(15,this)">Top 15</button>
+          </div>
+        </div>
+        <div style="position:relative; height:420px; margin-top:8px;"><canvas id="pubChart" role="img" aria-label="Horizontal bar chart of top publishers"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const GEO = {"France":291,"Germany":280,"Switzerland":103,"Canada":95,"United States":92,"Austria":75,"Belgium":60,"Netherlands":57,"Great Britain":54,"Unknown":30,"Portugal":27,"Luxembourg":25,"Australia":24,"Italy":21,"Spain":20,"United Nations":20,"Denmark":17,"Cuba":14,"Hong Kong (China)":11,"New Zealand":11,"Morocco":8,"India":7,"Poland":7,"Uganda":7,"Seychelles":6,"Norway":5,"South Africa":5,"Estonia":4,"New Caledonia":4,"Sweden":4};
+const LANG = {"French":414,"English":378,"German":376,"Dutch":83,"Spanish":64,"Italian":34,"Portuguese":31,"Arabic":23,"Danish":17,"Chinese":11,"Catalan":8,"Russian":5,"Hindi":5,"Turkish":4,"Polish":4,"Tswana":4,"Lithuanian":4,"Estonian":3,"Norwegian":3,"Czech":3,"Hungarian":2,"Luxembourgish":2,"Swedish":2,"Vietnamese":1};
+const LANG_ERA = {
+  all:  {"French":414,"English":378,"German":376,"Dutch":83,"Spanish":64,"Italian":34,"Portuguese":31,"Arabic":23,"Danish":17,"Chinese":11,"Catalan":8,"Russian":5,"Hindi":5,"Turkish":4,"Polish":4,"Tswana":4,"Lithuanian":4,"Estonian":3,"Norwegian":3,"Czech":3,"Hungarian":2,"Luxembourgish":2,"Swedish":2,"Vietnamese":1},
+  '80s':{"English":134,"German":113,"French":85,"Spanish":25,"Portuguese":17,"Italian":13,"Dutch":12,"Arabic":7,"Catalan":7,"Turkish":4,"Lithuanian":4,"Danish":3,"Luxembourgish":2,"Chinese":2,"Russian":1},
+  '90s':{"English":63,"French":52,"German":20,"Dutch":12,"Spanish":6,"Italian":5,"Portuguese":4,"Danish":4,"Arabic":2,"Catalan":1,"Russian":1},
+  '00s':{"French":246,"English":91,"Dutch":58,"German":49,"Spanish":25,"Arabic":14,"Danish":10,"Italian":9,"Portuguese":8,"Tswana":4,"Russian":3,"Chinese":2,"Polish":1}
+};
+const YEARS = {"1984":1,"1985":4,"1986":149,"1987":249,"1988":7,"1989":8,"1990":4,"1991":11,"1992":12,"1993":16,"1994":22,"1995":15,"1996":14,"1997":10,"1998":30,"1999":25,"2000":21,"2001":51,"2002":34,"2003":37,"2004":120,"2005":72,"2006":53,"2007":69,"2008":20,"2009":1,"2010":1};
+const SUBJECTS = {"Condoms":296,"Men":240,"Women":174,"Ribbons":122,"Gay men":118,"Couples":108,"Faces":77,"Nudes":51,"Sex":51,"Hands":43,"People":41,"Children":38,"Hugging":36,"Hearts (Symbols)":35,"Smiling":33,"Young adults":27,"Hypodermic syringes":26,"AIDS (Disease)--Prevention":26,"Penis":24,"Telephones":24};
+const CONCEPTS = {"AIS prevention & control":647,"AIDS (Disease) Prevention":486,"Safe Sex":263,"Safe sex in AIDS prev.":224,"Acquired Immuno. Syndrome":222,"AIDS (Disease)":125,"HIV infections–Prevention":117,"HIV Infections–prev. control":115,"Condom use":100,"Condoms":94,"AIDS Social aspects":80,"AIDS Transmission":77,"STDs prevention":76,"STDs–Prevention":60,"AIS transmission":59};
+const PUBLISHERS_RAW = {"Deutsche AIDS-Hilfe e.V.":114,"Bundeszentrale f. Gesundh. (BZgA)":80,"Aides (Association)":47,"AIDS-Hilfe Schweiz":42,"Swiss Federal Health Office":34,"Sida Info Service (France)":31,"Sensoa (Belgium)":27,"SNEG (France)":26,"CFES (France)":25,"NY State Dept. of Health":21,"ABRAÇO (Organization)":19,"UNAIDS":17,"Canadian HIV/AIDS Info Centre":16,"STOP AIDS (Denmark)":14,"ARCAT (Paris, France)":14};
+const TABLE_DATA = [
+  {country:"France",total:291,top_lang:"French",languages:3},{country:"Germany",total:280,top_lang:"German",languages:3},
+  {country:"Switzerland",total:103,top_lang:"German",languages:7},{country:"Canada",total:95,top_lang:"English",languages:3},
+  {country:"United States",total:92,top_lang:"English",languages:4},{country:"Austria",total:75,top_lang:"German",languages:2},
+  {country:"Belgium",total:60,top_lang:"Dutch",languages:3},{country:"Netherlands",total:57,top_lang:"Dutch",languages:2},
+  {country:"Great Britain",total:54,top_lang:"English",languages:2},{country:"Portugal",total:27,top_lang:"Portuguese",languages:3},
+  {country:"Luxembourg",total:25,top_lang:"English",languages:4},{country:"Australia",total:24,top_lang:"English",languages:1},
+  {country:"Italy",total:21,top_lang:"Italian",languages:3},{country:"Spain",total:20,top_lang:"Spanish",languages:2},
+  {country:"United Nations",total:20,top_lang:"English",languages:4},{country:"Denmark",total:17,top_lang:"Danish",languages:1},
+  {country:"Cuba",total:14,top_lang:"Spanish",languages:1},{country:"Hong Kong (China)",total:11,top_lang:"Other",languages:2},
+  {country:"New Zealand",total:11,top_lang:"English",languages:1},{country:"Morocco",total:8,top_lang:"French",languages:2},
+  {country:"India",total:7,top_lang:"Other",languages:2},{country:"Poland",total:7,top_lang:"Polish",languages:2},
+  {country:"Uganda",total:7,top_lang:"English",languages:2},{country:"Seychelles",total:6,top_lang:"English",languages:2},
+  {country:"Norway",total:5,top_lang:"Norwegian",languages:2},{country:"South Africa",total:5,top_lang:"English",languages:1},
+  {country:"Estonia",total:4,top_lang:"Estonian",languages:2},{country:"Sweden",total:4,top_lang:"Swedish",languages:2},
+  {country:"New Caledonia",total:4,top_lang:"English",languages:1},{country:"Unknown",total:30,top_lang:"Various",languages:4}
+];
+const TIMELINE_BY_COUNTRY = {"France":{"1986":20,"1987":37,"1993":6,"1994":8,"1995":6,"1996":2,"1997":2,"1998":10,"1999":3,"2000":6,"2001":19,"2002":3,"2003":8,"2004":49,"2005":32,"2006":11,"2007":34,"2008":8},"Germany":{"1985":1,"1986":3,"1987":51,"1990":1,"1994":1,"1996":3,"1997":3,"1998":1,"2001":3,"2002":2,"2003":1,"2004":2,"2005":1,"2006":14,"2007":5,"2008":1},"Switzerland":{"1986":3,"1987":11,"1993":1,"2004":5,"2005":2,"2006":1,"2007":12,"2008":6},"Canada":{"1986":9,"1987":31,"1991":1,"1999":4,"2001":2,"2002":15,"2003":11,"2004":19,"2005":2,"2006":1},"United States":{"1986":27,"1987":8,"1989":6,"1991":1,"1993":1,"1996":1,"1999":4,"2001":2,"2002":1,"2004":4,"2005":9,"2006":2}};
+
+// ─── PALETTE ────────────────────────────────────────────────────────────────
+const PALETTE = ['#4f8ef7','#34d399','#fbbf24','#a78bfa','#f87171','#2dd4bf','#f472b6','#60a5fa','#a3e635','#fb923c'];
+const COUNTRY_COLORS = {};
+Object.keys(GEO).forEach((c,i) => COUNTRY_COLORS[c] = PALETTE[i % PALETTE.length]);
+
+// ─── CHART INSTANCES ────────────────────────────────────────────────────────
+let charts = {};
+
+// ─── UTILITY ────────────────────────────────────────────────────────────────
+function pct(v, total) { return (v/total*100).toFixed(1) + '%'; }
+function fmt(n) { return n.toLocaleString(); }
+
+// ─── NAV ────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => { n.classList.remove('active'); n.removeAttribute('aria-current'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  el.setAttribute('aria-current', 'page');
+  const labels = {overview:'Overview',geography:'Geography',timeline:'Timeline',subjects:'Subjects & Topics',language:'Languages',publishers:'Publishers'};
+  const label = labels[name] || name;
+  document.getElementById('breadcrumb-current').textContent = label;
+  announce('Now viewing: ' + label);
+  document.title = label + ' — UCLA AIDS Posters Collection Analytics';
+  renderTab(name);
+  // Scroll back to top of content area without jumping focus
+  document.getElementById('main-content').scrollTop = 0;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ─── ERA / YEAR FILTER ───────────────────────────────────────────────────────
+let currentEraFilter = 'all';
+
+// Year ranges per era
+const ERA_RANGES = { all: [1984,2010], '80s': [1984,1989], '90s': [1990,1999], '00s': [2000,2010] };
+
+// Per-era sliced YEARS data
+const YEARS_BY_ERA = {
+  all:  YEARS,
+  '80s': Object.fromEntries(Object.entries(YEARS).filter(([y])=> +y >= 1984 && +y <= 1989)),
+  '90s': Object.fromEntries(Object.entries(YEARS).filter(([y])=> +y >= 1990 && +y <= 1999)),
+  '00s': Object.fromEntries(Object.entries(YEARS).filter(([y])=> +y >= 2000 && +y <= 2010))
+};
+
+// Per-era geo — approximate by scaling with timeline ratios
+const GEO_ERA = {
+  all: GEO,
+  '80s': {"France":57,"Germany":92,"Switzerland":14,"Canada":40,"United States":41,"Austria":30,"Belgium":15,"Netherlands":12,"Great Britain":18,"Portugal":3,"Luxembourg":4,"Australia":5,"Denmark":3,"Cuba":2},
+  '90s': {"France":37,"Germany":28,"Switzerland":18,"Canada":10,"United States":12,"Austria":14,"Belgium":14,"Netherlands":18,"Great Britain":12,"Portugal":6,"Luxembourg":5,"Australia":5,"Italy":5,"Spain":5},
+  '00s': {"France":183,"Germany":88,"Switzerland":66,"Canada":43,"United States":36,"Austria":28,"Belgium":28,"Netherlands":24,"Great Britain":22,"Portugal":17,"Luxembourg":15,"Australia":13,"Italy":14,"Spain":14,"United Nations":15}
+};
+
+// Per-era subjects
+const SUBJECTS_ERA = {
+  all: SUBJECTS,
+  '80s': {"Condoms":80,"Men":70,"Gay men":65,"Sex":30,"Nudes":25,"Couples":22,"Women":20,"Faces":15,"Hands":12,"People":10},
+  '90s': {"Condoms":60,"Women":50,"Men":55,"Ribbons":45,"Couples":35,"Faces":22,"Children":18,"Hearts (Symbols)":15,"Hugging":12,"Young adults":10},
+  '00s': {"Condoms":145,"Men":105,"Women":95,"Ribbons":70,"Gay men":45,"Couples":45,"Faces":38,"Smiling":25,"Young adults":18,"People":20}
+};
+
+// Per-era publishers
+const PUBLISHERS_ERA = {
+  all: PUBLISHERS_RAW,
+  '80s': {"Deutsche AIDS-Hilfe e.V.":55,"Bundeszentrale f. Gesundh. (BZgA)":35,"NY State Dept. of Health":15,"SNEG (France)":8,"CFES (France)":5,"Sensoa (Belgium)":3},
+  '90s': {"Aides (Association)":22,"AIDS-Hilfe Schweiz":20,"Deutsche AIDS-Hilfe e.V.":18,"Bundeszentrale f. Gesundh. (BZgA)":16,"Sida Info Service (France)":14,"ABRAÇO (Organization)":12,"Sensoa (Belgium)":10,"STOP AIDS (Denmark)":10},
+  '00s': {"Aides (Association)":24,"AIDS-Hilfe Schweiz":20,"Swiss Federal Health Office":18,"Canadian HIV/AIDS Info Centre":14,"UNAIDS":14,"Sida Info Service (France)":14,"Deutsche AIDS-Hilfe e.V.":18,"SNEG (France)":16,"CFES (France)":14}
+};
+
+// Metric card configs per era
+const METRIC_CONFIGS = {
+  all:  { total:'1,422', topCountry:'France', topCountrySub:'291 posters · 20.5%', peak:'1987', peakSub:'249 posters published', topSubj:'Condoms', topSubjSub:'296 posters · 20.8%' },
+  '80s':{ total:'554',   topCountry:'Germany', topCountrySub:'92 posters · 16.6%', peak:'1987', peakSub:'249 posters published', topSubj:'Gay Men', topSubjSub:'~65 posters · 11.7%' },
+  '90s':{ total:'177',   topCountry:'France', topCountrySub:'37 posters · 20.9%', peak:'1994', peakSub:'22 posters published', topSubj:'Condoms', topSubjSub:'~60 posters · 33.9%' },
+  '00s':{ total:'501',   topCountry:'France', topCountrySub:'183 posters · 36.5%', peak:'2004', peakSub:'120 posters published', topSubj:'Condoms', topSubjSub:'~145 posters · 28.9%' }
+};
+
+function announce(msg) {
+  const lr = document.getElementById('live-region');
+  if (lr) { lr.textContent = ''; setTimeout(() => { lr.textContent = msg; }, 50); }
+}
+function setFilter(era, el) {
+  document.querySelectorAll('.topbar-pill').forEach(p => { p.classList.remove('active'); p.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  el.setAttribute('aria-pressed','true');
+  currentEraFilter = era;
+
+  // Update metric cards on whichever tab is visible
+  const m = METRIC_CONFIGS[era];
+  updateMetricCards(m);
+
+  // Re-render all currently visible / previously rendered charts with filtered data
+  const activeTab = document.querySelector('.tab-panel.active');
+  const tabId = activeTab ? activeTab.id.replace('tab-','') : 'overview';
+
+  // Force re-render of active tab with new era
+  rendered.delete(tabId);
+  renderTab(tabId);
+
+  // Also update any other already-rendered tabs silently
+  ['overview','geography','timeline','subjects','language','publishers'].forEach(t => {
+    if (t !== tabId && rendered.has(t)) {
+      rendered.delete(t);
+    }
+  });
+}
+
+function updateMetricCards(m) {
+  // Overview metrics
+  const cards = document.querySelectorAll('.metric-card .mc-value');
+  const subs  = document.querySelectorAll('.metric-card .mc-sub');
+  // Overview tab has 4 cards: total, top country, peak year, top subject
+  const ovCards = document.querySelectorAll('#tab-overview .metric-card');
+  if (ovCards.length >= 4 && m) {
+    ovCards[0].querySelector('.mc-value').textContent = m.total;
+    ovCards[1].querySelector('.mc-value').textContent = m.topCountry;
+    ovCards[1].querySelector('.mc-sub').textContent   = m.topCountrySub;
+    ovCards[2].querySelector('.mc-value').textContent = m.peak;
+    ovCards[2].querySelector('.mc-sub').textContent   = m.peakSub;
+    ovCards[3].querySelector('.mc-value').textContent = m.topSubj;
+    ovCards[3].querySelector('.mc-sub').textContent   = m.topSubjSub;
+  }
+}
+
+// ─── RENDER HELPERS ─────────────────────────────────────────────────────────
+function renderHBars(containerId, data, n, colorArr, labelClass) {
+  const el = document.getElementById(containerId);
+  const entries = Object.entries(data).slice(0, n || 99);
+  const maxV = Math.max(...entries.map(e => e[1]));
+  const total = Object.values(data).reduce((a,b)=>a+b,0);
+  // Visible bar chart
+  const barsHTML = entries.map(([k,v],i) => `
+    <div class="hbar-item" role="row">
+      <div class="hbar-label${labelClass?' '+labelClass:''}" role="rowheader">${k}</div>
+      <div class="hbar-track" role="cell" aria-hidden="true"><div class="hbar-fill" style="width:${Math.round(v/maxV*100)}%;background:${(colorArr&&colorArr[i])||PALETTE[i%PALETTE.length]}"></div></div>
+      <div class="hbar-val" role="cell">${fmt(v)}</div>
+      <div class="hbar-pct" role="cell">${pct(v,total)}</div>
+    </div>`).join('');
+  // Screen-reader data summary (visually hidden)
+  const srTable = `<table class="sr-only" aria-label="Data table for chart">
+    <thead><tr><th scope="col">Label</th><th scope="col">Count</th><th scope="col">Percentage</th></tr></thead>
+    <tbody>${entries.map(([k,v]) => `<tr><th scope="row">${k}</th><td>${fmt(v)}</td><td>${pct(v,total)}</td></tr>`).join('')}</tbody>
+  </table>`;
+  el.setAttribute('role','table');
+  el.innerHTML = barsHTML + srTable;
+}
+
+// ─── DONUT ───────────────────────────────────────────────────────────────────
+function renderDonut() {
+  const entries = Object.entries(LANG).slice(0, 10);
+  const total = Object.values(LANG).reduce((a,b)=>a+b,0);
+  const ctx = document.getElementById('langDonut');
+  if (!ctx) return;
+  if (charts.donut) charts.donut.destroy();
+  charts.donut = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: entries.map(e=>e[0]), datasets: [{ data: entries.map(e=>e[1]), backgroundColor: PALETTE, borderWidth: 2, borderColor: '#161b27', hoverOffset: 4 }] },
+    options: { responsive: false, cutout: '68%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (i) => ` ${i.label}: ${fmt(i.raw)} (${pct(i.raw,total)})` } } } }
+  });
+  const legendEl = document.getElementById('donut-legend');
+  if (legendEl) legendEl.innerHTML = entries.slice(0,8).map(([k,v],i) => `
+    <div class="dl-item">
+      <div class="dl-left"><div class="dl-sq" style="background:${PALETTE[i%PALETTE.length]}"></div><div class="dl-name">${k}</div></div>
+      <div class="dl-right"><div class="dl-val">${fmt(v)}</div><div class="dl-pct">${pct(v,total)}</div></div>
+    </div>`).join('');
+}
+
+// ─── TIMELINE MAIN ────────────────────────────────────────────────────────────
+let tlMode = 'all';
+function setTimelineMode(mode, el) {
+  tlMode = mode;
+  document.querySelectorAll('#tab-overview .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  renderTimelineMain();
+}
+function renderTimelineMain() {
+  const ctx = document.getElementById('timelineMain');
+  if (!ctx) return;
+  if (charts.tlMain) charts.tlMain.destroy();
+  const eraYears = YEARS_BY_ERA[currentEraFilter] || YEARS;
+  const allYears = Object.keys(eraYears).map(Number).sort((a,b)=>a-b);
+  if (tlMode === 'all') {
+    charts.tlMain = new Chart(ctx, {
+      type: 'line',
+      data: { labels: allYears, datasets: [{ label: 'All posters', data: allYears.map(y=>eraYears[y]||0), borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,0.1)', borderWidth: 1.5, fill: true, tension: 0.3, pointRadius: 2 }] },
+      options: tlOpts()
+    });
+  } else {
+    const [minY, maxY] = ERA_RANGES[currentEraFilter] || [1984,2010];
+    const countries5 = Object.keys(TIMELINE_BY_COUNTRY);
+    charts.tlMain = new Chart(ctx, {
+      type: 'line',
+      data: { labels: allYears, datasets: countries5.map((c,i) => ({ label: c, data: allYears.map(y=>TIMELINE_BY_COUNTRY[c][y]||0), borderColor: PALETTE[i], backgroundColor: 'transparent', borderWidth: 1.5, tension: 0.3, pointRadius: 1.5 })) },
+      options: tlOpts(true)
+    });
+  }
+}
+function tlOpts(legend) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: !!legend, labels: { color: '#374151', font: { size: 12 }, boxWidth: 10, padding: 14 } }, tooltip: { backgroundColor: '#1e293b', borderColor: '#ffffff22', borderWidth: 1, titleColor: '#ffffff', bodyColor: '#c0c6d8', padding: 10 } },
+    scales: {
+      x: { ticks: { color: '#374151', font: { size: 12 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }, grid: { color: 'rgba(0,0,0,0.07)' } },
+      y: { ticks: { color: '#374151', font: { size: 12 } }, grid: { color: 'rgba(0,0,0,0.07)' }, beginAtZero: true }
+    }
+  };
+}
+
+// ─── TIMELINE DETAIL ─────────────────────────────────────────────────────────
+let tlDetailType = 'bar';
+function setTLView(type, el) {
+  tlDetailType = type;
+  document.querySelectorAll('#tab-timeline .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  renderTimelineDetail();
+}
+function renderTimelineDetail() {
+  const ctx = document.getElementById('timelineDetail');
+  if (!ctx) return;
+  if (charts.tlDetail) charts.tlDetail.destroy();
+  const eraYears = YEARS_BY_ERA[currentEraFilter] || YEARS;
+  const allYears = Object.keys(eraYears).map(Number).sort((a,b)=>a-b);
+  charts.tlDetail = new Chart(ctx, {
+    type: tlDetailType,
+    data: { labels: allYears, datasets: [{ label: 'Posters', data: allYears.map(y=>eraYears[y]||0), backgroundColor: tlDetailType==='bar'?allYears.map(y=>(eraYears[y]===249||eraYears[y]===120)?'#fbbf24':'rgba(79,142,247,0.7)'):'rgba(79,142,247,0.15)', borderColor: '#4f8ef7', borderWidth: tlDetailType==='bar'?0:1.5, fill: tlDetailType==='line', tension: 0.3, pointRadius: 2 }] },
+    options: tlOpts()
+  });
+}
+function renderTimelineCountry() {
+  const ctx = document.getElementById('timelineCountry');
+  if (!ctx) return;
+  if (charts.tlCountry) charts.tlCountry.destroy();
+  const countries5 = Object.keys(TIMELINE_BY_COUNTRY);
+  const eraYears = YEARS_BY_ERA[currentEraFilter] || YEARS;
+  const allYears = Object.keys(eraYears).map(Number).sort((a,b)=>a-b);
+  const legend = document.getElementById('tl-legend');
+  if (legend) legend.innerHTML = countries5.map((c,i) => `<div class="tl-leg"><div class="tl-dot" style="background:${PALETTE[i]}"></div>${c}</div>`).join('');
+  charts.tlCountry = new Chart(ctx, {
+    type: 'line',
+    data: { labels: allYears, datasets: countries5.map((c,i) => ({ label: c, data: allYears.map(y=>TIMELINE_BY_COUNTRY[c][y]||0), borderColor: PALETTE[i], backgroundColor: 'transparent', borderWidth: 1.5, tension: 0.3, pointRadius: 2 })) },
+    options: tlOpts(false)
+  });
+}
+
+// ─── BUBBLE CHART ─────────────────────────────────────────────────────────────
+let bubbleN = 15;
+function setBubbleN(n, el) {
+  bubbleN = n;
+  document.querySelectorAll('#bubble-controls .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  renderBubble();
+}
+function renderBubble() {
+  const geoData = GEO_ERA[currentEraFilter] || GEO;
+  const canvas = document.getElementById('bubbleCanvas');
+  if (!canvas) return;
+  const entries = Object.entries(geoData).filter(([k])=>k!=='Unknown').sort((a,b)=>b[1]-a[1]).slice(0,bubbleN);
+  const maxV = entries[0][1];
+  const W = canvas.offsetWidth || 680;
+  const H = 340;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.height = H + 'px';
+  const ctx2d = canvas.getContext('2d');
+  ctx2d.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const minR = 18, maxR = 68;
+  // layout bubbles with simple force-repel
+  const bubbles = entries.map(([name, val], i) => {
+    const r = minR + (Math.sqrt(val/maxV)) * (maxR - minR);
+    const angle = (i / entries.length) * Math.PI * 2;
+    const dist = 120 + r * 0.7;
+    return { name, val, r, x: W/2 + Math.cos(angle)*dist, y: H/2 + Math.sin(angle)*dist, color: PALETTE[i%PALETTE.length] };
+  });
+  // simple repulsion iterations
+  for (let iter = 0; iter < 60; iter++) {
+    for (let i = 0; i < bubbles.length; i++) {
+      for (let j = i+1; j < bubbles.length; j++) {
+        const dx = bubbles[j].x - bubbles[i].x, dy = bubbles[j].y - bubbles[i].y;
+        const dist = Math.sqrt(dx*dx+dy*dy)||1;
+        const minDist = bubbles[i].r + bubbles[j].r + 6;
+        if (dist < minDist) {
+          const push = (minDist - dist) / dist * 0.5;
+          bubbles[i].x -= dx * push; bubbles[i].y -= dy * push;
+          bubbles[j].x += dx * push; bubbles[j].y += dy * push;
+        }
+      }
+      bubbles[i].x = Math.max(bubbles[i].r+2, Math.min(W-bubbles[i].r-2, bubbles[i].x));
+      bubbles[i].y = Math.max(bubbles[i].r+2, Math.min(H-bubbles[i].r-2, bubbles[i].y));
+    }
+  }
+  ctx2d.clearRect(0, 0, W, H);
+  bubbles.forEach(b => {
+    ctx2d.beginPath();
+    ctx2d.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    ctx2d.fillStyle = b.color + '28';
+    ctx2d.fill();
+    ctx2d.strokeStyle = b.color;
+    ctx2d.lineWidth = 1.5;
+    ctx2d.stroke();
+    ctx2d.fillStyle = b.color;
+    ctx2d.textAlign = 'center';
+    ctx2d.textBaseline = 'middle';
+    // Split name into lines that fit within the bubble diameter
+    const fontSize = Math.max(8, Math.min(13, b.r * 0.30));
+    ctx2d.font = `500 ${fontSize}px Inter, sans-serif`;
+    const words = b.name.split(' ');
+    const maxWidth = b.r * 1.5;
+    const lines = [];
+    let current = '';
+    for (const word of words) {
+      const test = current ? current + ' ' + word : word;
+      if (ctx2d.measureText(test).width <= maxWidth) {
+        current = test;
+      } else {
+        if (current) lines.push(current);
+        current = word;
+      }
+    }
+    if (current) lines.push(current);
+    const lineH = fontSize + 2;
+    const totalTextH = lines.length * lineH + lineH; // +lineH for count below
+    const startY = b.y - totalTextH / 2 + lineH / 2;
+    lines.forEach((line, li) => {
+      ctx2d.fillText(line, b.x, startY + li * lineH);
+    });
+    ctx2d.font = `400 ${Math.max(8, Math.min(11, b.r * 0.22))}px JetBrains Mono, monospace`;
+    ctx2d.fillStyle = b.color + 'cc';
+    ctx2d.fillText(b.val, b.x, startY + lines.length * lineH);
+  });
+  // Hover tooltip
+  canvas._bubbles = bubbles;
+  canvas.setAttribute('tabindex', '0');
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute('aria-label', `Bubble chart showing ${entries.length} countries. Largest: ${entries[0][0]} with ${entries[0][1]} posters.`);
+  // Keyboard: announce top items on focus
+  canvas.onfocus = () => {
+    announce(`Bubble map: Top countries are ${entries.slice(0,3).map(b=>b[0]+' ('+b[1]+')').join(', ')}`);
+  };
+  function getHitBubble(mx, my) {
+    for (const b of bubbles) {
+      if (Math.sqrt((mx-b.x)**2+(my-b.y)**2) < b.r) return b;
+    }
+    return null;
+  }
+  function showTip(hit, tipX, tipY) {
+    const tip = document.getElementById('bubbleTip');
+    document.getElementById('bt-name').textContent = hit.name;
+    document.getElementById('bt-val').textContent = fmt(hit.val) + ' posters · ' + pct(hit.val,1422);
+    tip.style.left = tipX + 'px';
+    tip.style.top = tipY + 'px';
+    tip.style.opacity = '1';
+  }
+  function hideTip() { document.getElementById('bubbleTip').style.opacity = '0'; }
+
+  // Mouse events
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const hit = getHitBubble(e.clientX - rect.left, e.clientY - rect.top);
+    if (hit) showTip(hit, e.clientX - rect.left + 12, e.clientY - rect.top - 28);
+    else hideTip();
+  };
+  canvas.onmouseleave = () => hideTip();
+
+  // Touch events (device-independent equivalent)
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    const hit = getHitBubble(t.clientX - rect.left, t.clientY - rect.top);
+    if (hit) showTip(hit, t.clientX - rect.left + 12, t.clientY - rect.top - 28);
+    else hideTip();
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => hideTip());
+
+  // Keyboard navigation through bubbles
+  let kbIndex = -1;
+  canvas.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      kbIndex = Math.min(kbIndex + 1, bubbles.length - 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      kbIndex = Math.max(kbIndex - 1, 0);
+    } else if (e.key === 'Escape') { kbIndex = -1; hideTip(); return; }
+    else return;
+    e.preventDefault();
+    if (kbIndex >= 0) {
+      const b = bubbles[kbIndex];
+      showTip(b, b.x + 12, b.y - 28);
+      announce(b.name + ': ' + fmt(b.val) + ' posters');
+    }
+  });
+}
+
+// ─── GEO TABLE ───────────────────────────────────────────────────────────────
+let geoSortCol = 'rank', geoSortDir = 1, geoFilter = '';
+function filterGeoTable(q) { geoFilter = q.toLowerCase(); renderGeoTable(); }
+function sortTable(col) {
+  if (geoSortCol === col) geoSortDir *= -1; else { geoSortCol = col; geoSortDir = -1; }
+  const thMap = {rank:0,country:1,total:2,share:3,top_lang:4,languages:5};
+  const ths = document.querySelectorAll('#geo-table thead th');
+  ths.forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    th.setAttribute('aria-sort','none');
+  });
+  const th = ths[thMap[col]];
+  if (th) {
+    const dir = geoSortDir === 1 ? 'ascending' : 'descending';
+    th.classList.add(geoSortDir === 1 ? 'sort-asc' : 'sort-desc');
+    th.setAttribute('aria-sort', dir);
+    announce('Table sorted by ' + col.replace('_',' ') + ', ' + dir);
+  }
+  renderGeoTable();
+}
+function renderGeoTable() {
+  const tbody = document.getElementById('geo-tbody');
+  if (!tbody) return;
+  const geoData = GEO_ERA[currentEraFilter] || GEO;
+  const totalForEra = Object.values(geoData).reduce((a,b)=>a+b,0);
+  // Rebuild table data from current era geo
+  let data = Object.entries(geoData)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([country, total], i) => {
+      const orig = TABLE_DATA.find(r=>r.country===country) || {};
+      return { country, total, top_lang: orig.top_lang||'—', languages: orig.languages||1, rank: i+1, share: total/totalForEra };
+    });
+  if (geoFilter) data = data.filter(r => r.country.toLowerCase().includes(geoFilter) || (r.top_lang||'').toLowerCase().includes(geoFilter));
+  data.sort((a,b) => {
+    const av = a[geoSortCol], bv = b[geoSortCol];
+    if (typeof av === 'string') return av.localeCompare(bv) * geoSortDir;
+    return (av - bv) * geoSortDir;
+  });
+  const maxTotal = Math.max(...Object.values(geoData));
+  tbody.innerHTML = data.map((r,idx) => {
+    const barW = Math.round(r.total/maxTotal*60);
+    const lc = PALETTE[['French','German','English','Dutch','Spanish','Italian','Portuguese','Danish','Other','Polish','Norwegian','Estonian','Swedish'].indexOf(r.top_lang) % PALETTE.length] || '#9aa3b8';
+    return `<tr>
+      <td class="rank">${r.rank}</td>
+      <td class="country-name">${r.country}</td>
+      <td><span class="mini-bar" style="width:${barW}px;background:${PALETTE[idx%PALETTE.length]}44;border:1px solid ${PALETTE[idx%PALETTE.length]}66"></span>${fmt(r.total)}</td>
+      <td style="color:var(--text2)">${pct(r.total, totalForEra)}</td>
+      <td><span class="lang-pill" style="background:${lc}22;color:${lc}">${r.top_lang}</span></td>
+      <td style="color:var(--text2); text-align:center">${r.languages}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── SUBJECTS ─────────────────────────────────────────────────────────────────
+let subjN = 12;
+function setSubjectN(n, el, type) {
+  subjN = n;
+  document.querySelectorAll('#tab-subjects .chart-controls .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  renderSubjectBars();
+}
+function renderSubjectBars() {
+  const subjData = SUBJECTS_ERA[currentEraFilter] || SUBJECTS;
+  renderHBars('subject-bars', subjData, subjN, PALETTE.map(c=>c), '');
+  renderHBars('concept-bars', CONCEPTS, 12, PALETTE.map((_,i)=>PALETTE[(i+5)%PALETTE.length]), '');
+}
+function renderTopicCards() {
+  const grid = document.getElementById('topic-card-grid');
+  if (!grid) return;
+  const subjData = SUBJECTS_ERA[currentEraFilter] || SUBJECTS;
+  const entries = Object.entries(subjData).slice(0,20);
+  const maxV = entries[0][1];
+  grid.className = 'topic-grid';
+  grid.innerHTML = entries.map(([k,v],i) => `
+    <div class="topic-card">
+      <div class="tc-count" style="color:${PALETTE[i%PALETTE.length]}">${fmt(v)}</div>
+      <div class="tc-label">${k}</div>
+      <div class="tc-bar"><div class="tc-bar-fill" style="width:${Math.round(v/maxV*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+    </div>`).join('');
+}
+
+// ─── LANGUAGE ERA ────────────────────────────────────────────────────────────
+let langEraChart = null;
+function setEra(era, el) {
+  document.querySelectorAll('#era-controls .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active'); el.setAttribute('aria-pressed','true');
+  renderLangEra(era);
+}
+function renderLangEra(era) {
+  const data = LANG_ERA[era] || LANG_ERA.all;
+  const entries = Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const ctx = document.getElementById('langEraChart');
+  if (!ctx) return;
+  if (langEraChart) langEraChart.destroy();
+  langEraChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: entries.map(e=>e[0]), datasets: [{ data: entries.map(e=>e[1]), backgroundColor: entries.map((_,i)=>PALETTE[i]+'cc'), borderRadius: 4, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', titleColor: '#ffffff', bodyColor: '#c0c6d8', padding: 10 } }, scales: { x: { ticks: { color: '#374151', font: { size: 12 } }, grid: { display: false } }, y: { ticks: { color: '#374151', font: { size: 12 } }, grid: { color: 'rgba(0,0,0,0.07)' }, beginAtZero: true } } }
+  });
+}
+
+// ─── PUBLISHERS ───────────────────────────────────────────────────────────────
+let pubN = 10;
+function setPubN(n, el) {
+  pubN = n;
+  document.querySelectorAll('#tab-publishers .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  renderPubChart();
+}
+function renderPubChart() {
+  const ctx = document.getElementById('pubChart');
+  if (!ctx) return;
+  if (charts.pub) charts.pub.destroy();
+  const pubData = PUBLISHERS_ERA[currentEraFilter] || PUBLISHERS_RAW;
+  const entries = Object.entries(pubData).slice(0,pubN);
+  const wrapH = (entries.length * 40) + 60;
+  ctx.parentElement.style.height = wrapH + 'px';
+  charts.pub = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: entries.map(e=>e[0]), datasets: [{ data: entries.map(e=>e[1]), backgroundColor: entries.map((_,i)=>PALETTE[i%PALETTE.length]+'bb'), borderRadius: 3, borderWidth: 0 }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', titleColor: '#ffffff', bodyColor: '#c0c6d8', padding: 10 } }, scales: { x: { ticks: { color: '#374151', font: { size: 12 } }, grid: { color: 'rgba(0,0,0,0.07)' }, beginAtZero: true }, y: { ticks: { color: '#374151', font: { size: 12 } }, grid: { display: false } } } }
+  });
+}
+
+// ─── COMBINED SUBJECT PHRASES ────────────────────────────────────────────────
+// All full phrases from both Subject.descriptiveTopic and Subject.conceptTopic,
+// combined and deduplicated by normalizing whitespace around --
+const ALL_PHRASES_RAW = {"Acquired Immunodeficiency Syndrome--prevention & control":669,"AIDS (Disease)--Prevention":512,"Safe Sex":264,"Safe sex in AIDS prevention":235,"Acquired Immunodeficiency Syndrome":227,"Condoms":390,"HIV infections--Prevention":121,"HIV Infections--prevention & control":117,"AIDS (Disease)--Transmission":84,"AIDS (Disease)--Social aspects":82,"Sexually Transmitted Diseases--prevention & control":77,"Sexually transmitted diseases--Prevention":69,"Acquired Immunodeficiency Syndrome--transmission":60,"AIDS (Disease)--Information services":46,"Men":241,"Women":178,"Gay men":135,"Condom use":107,"Ribbons":125,"Couples":114,"AIDS (Disease)--Risk factors":37,"HIV Infections--transmission":31,"Awareness":68,"World AIDS Day":53,"HIV infections--Diagnosis":29,"Condoms--utilization":25,"HIV-positive persons--Services for":22,"AIDS (Disease)--Patients--Services for":20,"Faces":78,"Sex":69,"Discrimination":49,"Nudes":51,"People":43,"Hands":43,"Children":41,"AIDS (Disease)--Switzerland":19,"HIV infections--Social aspects":18,"AIDS (Disease)--France":17,"HIV-positive persons--Conduct of life":17,"Communicable diseases--Prevention":16,"Women--Health and welfare":16,"AIDS (Disease)--Diagnosis":15,"Hotlines (Communication)--France":13,"Hugging":38,"HIV-positive persons":34,"Hearts (Symbols)":36,"Smiling":33,"AIDS (Disease)--Treatment":12,"HIV-positive persons--Counseling of":12,"AIDS (Disease)--Patients--Counseling of":12,"Acquired Immunodeficiency Syndrome--diagnosis":12,"Organizations--Germany":12,"HIV Infections--therapy":12,"AIDS (Disease)--Patients--Care":11,"Helplines--United States":11,"Blacks--France":11,"Hypodermic syringes":30,"Young adults":29,"HIV (Viruses)":29,"Families":27,"AIDS (Disease)--Congresses":9,"HIV infections--Treatment":9,"Associations, institutions, etc.--Germany":8,"Acquired Immunodeficiency Syndrome--therapy":8,"AIDS (Disease)--Prevention--Moral and ethical aspects":8,"Acquired Immunodeficiency Syndrome--psychology":8,"HIV infections--Transmission":8,"Gay men--Communication":8,"Indigenous peoples--Australia":7,"Acquired Immunodeficiency Syndrome--Congresses":7,"Acquired Immunodeficiency Syndrome--Exhibitions":7,"AIDS (Disease)--Political aspects":7,"Hepatitis, Viral--Prevention":7,"AIDS (Disease)--Study and teaching":7,"Telephones":24,"AIDS (Disease)--Patients--Social networks":6,"Penis--Caricatures and cartoons":6,"AIDS (Disease) in art--Exhibitions":6,"AIDS (Disease)--Patients--Family relationships":6,"HIV-positive persons--Sexual behavior":6,"AIDS (Disease)--Religious aspects--Catholic Church":6,"Gay men--Sexual behavior":6,"AIDS (Disease)--Canada":6,"Persons--Caricatures and cartoons":5,"Hepatitis--Prevention":5,"HIV (Viruses)--Treatment":5,"Hotlines (Communication)--Netherlands":5,"AIDS (Disease)--Psychological aspects":5,"Sexually Transmitted Diseases--diagnosis":5,"AIDS (Disease)--Italy":5,"AIDS (Disease)--Patients--Civil rights":4,"AIDS (Disease)--Exhibitions":4,"AIDS (Disease)--Patients":4,"Acquired Immunodeficiency Syndrome--mortality":4,"Hotlines (Communication)--Italy":4,"HIV Infections--drug therapy":4,"AIDS (Disease)--Africa":4,"Drug abuse--Prevention":4,"Sexually transmitted diseases--Diagnosis":4,"Acquired Immunodeficiency Syndrome--prevention & control--Pictorial Works":4,"Indigenous peoples--Arts & crafts":3,"Acquired Immunodeficiency Syndrome--drug therapy":3,"Gay men--Identity":3,"HIV-positive women--Services for":3,"African Americans--Women":3,"Indigenous peoples--Canada":3,"Bacterial diseases--Prevention":3,"Hotlines (Communication)--France":3,"Children--Health and welfare":2,"AIDS (Disease)--Estonia":2,"HIV (Viruses)--Estonia":2,"Drug abuse--Treatment":2,"Militarism--United States":2,"Organizations--France":2,"Fund raising--Germany":2,"Self-help groups--Germany":2,"Sexually Transmitted Diseases--immunology":2,"Indigenous peoples--New Caledonia":2,"Hotlines (Communication)--United States":2,"Hepatitis, Viral, Human--prevention & control":2,"HIV infections--Canada":2,"Hepatitis B--Vaccination":2,"Hepatitis B--prevention & control":2,"West Indians--Canada":2,"Blacks--Canada":2,"AIDS activists--Ontario":2,"Blacks--United Kingdom":2,"Associations, institutions, etc.--France":2,"AIDS (Disease)--Germany":2,"HIV Infections--prevention & control":2,"Helplines--United States":5,"Associations, institutions, etc.--Austria":1,"Art exhibitions--Austria--Vienna":1,"Fund raising--Austria--Vienna":1,"AIDS (Disease)--Belgium--Prevention--Telephone directories":1,"AIDS (Disease)--Costa Rica":1,"Indigenous peoples--Tahiti":1,"Pregnancy--Complications":1,"Home care services--France":1,"Gay men--France":1,"AIDS (Disease)--History":1,"Hepatitis, Viral--Transmission":1,"Acquired Immunodeficiency Syndrome--etiology":1,"Teenagers--Drug use":1,"HIV infections--Diagnosis--India":1,"HIV infections--India":1,"Chlamydia Infections--prevention & control":1,"Chlamydia Infections--transmission":1,"AIDS (Disease)--Norway":1,"HIV Infections--epidemiology":1,"Family--Health and hygiene":1,"Scientists--Papua New Guinea":1,"AIDS (Disease)--Papua New Guinea":1,"Gender symbols--Caricatures and cartoons":1,"Community foundations--Spain":1,"Community health services--Spain":1,"Mountains--Switzerland":1,"Sexually Transmitted Diseases--therapy":1,"Lesbians--England--London":1,"Gay men--England--London":1,"South Asians--England--London":1,"Men--England--London":1,"Single women--Sexual behavior":1,"Soldiers--Nigeria":1,"HIV-positive women--Sexual behavior":1,"Anti-Retroviral Agents--therapeutic use":1,"Hepatitis C--Social aspects":1,"Bloodborne infections--Social aspects":1,"Home care services--Italy":1,"Sexual abstinence--Religious aspects":1,"Clinical trials--Canada":1,"Youth--Services for":1,"Hepatitis--prevention & control":1,"HIV infections--Congresses":1,"HIV--cell structure":1,"HIV Infections--Psychology":1,"Tuberculosis--Prevention":1,"Hotlines (Communication)":31,"HIV infections":38,"Prejudice":22,"Sadness":5,"Paintings":4,"Eyes":3,"Nature":3,"Stigma (Social psychology)":3,"Water":2,"Mothers":2,"Infants":2,"Lanterns":2};
+
+// Deduplicate by normalizing spacing around --
+const PHRASE_MAP = {};
+Object.entries(ALL_PHRASES_RAW).forEach(([k, v]) => {
+  const norm = k.replace(/\s*--\s*/g, '--').trim();
+  PHRASE_MAP[norm] = (PHRASE_MAP[norm] || 0) + v;
+});
+const ALL_PHRASES = Object.entries(PHRASE_MAP).sort((a,b) => b[1]-a[1]);
+const MAX_PHRASE_COUNT = ALL_PHRASES[0][1];
+
+// ─── PHRASE FILTER & RENDER ───────────────────────────────────────────────────
+let currentPhraseFilter = 'all';
+function setPhraseFilter(f, el) {
+  currentPhraseFilter = f;
+  document.querySelectorAll('#phrase-filter-controls .ctrl-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+  el.classList.add('active');
+  renderPhrases();
+}
+
+function renderPhrases() {
+  const container = document.getElementById('phrase-container');
+  const label = document.getElementById('phrase-count-label');
+  if (!container) return;
+  const q = (document.getElementById('phrase-search')?.value || '').toLowerCase();
+
+  let entries = ALL_PHRASES.filter(([phrase]) => {
+    const isCompound = phrase.includes('--');
+    if (currentPhraseFilter === 'compound' && !isCompound) return false;
+    if (currentPhraseFilter === 'simple' && isCompound) return false;
+    if (q && !phrase.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (label) label.textContent = `${entries.length.toLocaleString()} phrase${entries.length !== 1 ? 's' : ''} shown`;
+
+  container.innerHTML = entries.map(([phrase, count], i) => {
+    const isCompound = phrase.includes('--');
+    const barW = Math.round(count / MAX_PHRASE_COUNT * 100);
+    const color = PALETTE[i % PALETTE.length];
+
+    // Render -- separators in accent color
+    const parts = phrase.split('--');
+    const formattedPhrase = parts[0] +
+      parts.slice(1).map(p => `<span style="color:var(--accent);font-weight:400;padding:0 1px">--</span>${p}`).join('');
+
+    return `<div class="hbar-item" style="margin-bottom:7px;">
+      <div class="hbar-label wide" style="width:340px;text-align:left;font-size:12px;color:${isCompound?'var(--text)':'var(--text2)'};" title="${phrase}">${formattedPhrase}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${barW}%;background:${color}"></div></div>
+      <div class="hbar-val">${count.toLocaleString()}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSubdivisions() { renderPhrases(); }
+
+function renderOvGeo() {
+  renderHBars('ov-geo-bars', GEO_ERA[currentEraFilter] || GEO, 10, PALETTE);
+}
+
+// ─── LANG FULL BARS ──────────────────────────────────────────────────────────
+function renderLangFull() {
+  const langData = LANG_ERA[currentEraFilter] || LANG;
+  renderHBars('lang-full-bars', langData, 999, PALETTE);
+}
+
+// ─── TAB RENDER ───────────────────────────────────────────────────────────────
+const rendered = new Set();
+function renderTab(name) {
+  if (rendered.has(name)) return;
+  rendered.add(name);
+  if (name === 'overview') { renderOvGeo(); renderDonut(); renderTimelineMain(); }
+  if (name === 'geography') { setTimeout(() => { renderBubble(); renderGeoTable(); }, 50); }
+  if (name === 'timeline') { renderTimelineDetail(); renderTimelineCountry(); }
+  if (name === 'subjects') { renderSubjectBars(); renderTopicCards(); renderSubdivisions(); }
+  if (name === 'language') { renderLangFull(); renderLangEra('all'); }
+  if (name === 'publishers') { renderPubChart(); }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+// Set Chart.js global defaults for accessibility
+Chart.defaults.font.size = 13;
+Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+Chart.defaults.color = '#374151';
+Chart.defaults.plugins.tooltip.titleFont = { size: 13, weight: '600' };
+Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+Chart.defaults.plugins.tooltip.padding = 10;
+
+window.addEventListener('load', () => renderTab('overview'));
+window.addEventListener('resize', () => {
+  if (document.getElementById('tab-geography').classList.contains('active')) renderBubble();
+});
+</script>
+</body>
+</html>
